@@ -3,8 +3,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CPP_FLAGS} -DNDEBUG -O2 -D__const__= -D__STRICT_ANS
 use_cxx11()
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/output/bin)
 
-add_subdirectory(parallel_http)
-add_subdirectory(rpc_press)
-add_subdirectory(rpc_replay)
-add_subdirectory(rpc_view)
-add_subdirectory(trackme_server)
+#add_subdirectory(parallel_http)
+#add_subdirectory(rpc_press)
+#add_subdirectory(rpc_replay)
+#add_subdirectory(rpc_view)
+#add_subdirectory(trackme_server)

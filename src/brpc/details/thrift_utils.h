@@ -75,7 +75,7 @@ bool serialize_iobuf_to_thrift_message(butil::IOBuf& body,
     
     in_portocol->readMessageBegin(*method_name, mtype, *thrift_message_seq_id);
     
-    apache::thrift::protocol::TInputRecursionTracker tracker(*in_portocol);
+    //apache::thrift::protocol::TInputRecursionTracker tracker(*in_portocol);
     uint32_t xfer = 0;
     ::apache::thrift::protocol::TType ftype;
     int16_t fid;
