@@ -1,5 +1,19 @@
-// Copyright (c) 2014 Baidu, Inc.
-// Date: Thu Jun 11 14:30:07 CST 2015
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 
 #include <iostream>
@@ -474,20 +488,63 @@ TEST_F(RedisTest, cmd_format) {
 		request._buf.to_string().c_str());
     request.Clear();
 
-    request.AddCommand("get ''key value");  // == get key value
-    ASSERT_STREQ("*3\r\n$3\r\nget\r\n$3\r\nkey\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
+    request.AddCommand("get ''key value");  // == get <empty> key value
+    ASSERT_STREQ("*4\r\n$3\r\nget\r\n$0\r\n\r\n$3\r\nkey\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
     request.Clear();
 
-    request.AddCommand("get key'' value");  // == get key value
-    ASSERT_STREQ("*3\r\n$3\r\nget\r\n$3\r\nkey\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
+    request.AddCommand("get key'' value");  // == get key <empty> value
+    ASSERT_STREQ("*4\r\n$3\r\nget\r\n$3\r\nkey\r\n$0\r\n\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
     request.Clear();
 
-    request.AddCommand("get 'ext'key   value  ");  // == get extkey value
-    ASSERT_STREQ("*3\r\n$3\r\nget\r\n$6\r\nextkey\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
+    request.AddCommand("get 'ext'key   value  ");  // == get ext key value
+    ASSERT_STREQ("*4\r\n$3\r\nget\r\n$3\r\next\r\n$3\r\nkey\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
     request.Clear();
     
-    request.AddCommand("  get   key'ext'   value  ");  // == get keyext value
-    ASSERT_STREQ("*3\r\n$3\r\nget\r\n$6\r\nkeyext\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
+    request.AddCommand("  get   key'ext'   value  ");  // == get key ext value
+    ASSERT_STREQ("*4\r\n$3\r\nget\r\n$3\r\nkey\r\n$3\r\next\r\n$5\r\nvalue\r\n", request._buf.to_string().c_str());
     request.Clear();
 }
+
+TEST_F(RedisTest, quote_and_escape) {
+    if (g_redis_pid < 0) {
+        puts("Skipped due to absence of redis-server");
+        return;
+    }
+    brpc::RedisRequest request;
+    request.AddCommand("set a 'foo bar'");
+    ASSERT_STREQ("*3\r\n$3\r\nset\r\n$1\r\na\r\n$7\r\nfoo bar\r\n",
+                 request._buf.to_string().c_str());
+    request.Clear();
+
+    request.AddCommand("set a 'foo \\'bar'");
+    ASSERT_STREQ("*3\r\n$3\r\nset\r\n$1\r\na\r\n$8\r\nfoo 'bar\r\n",
+                 request._buf.to_string().c_str());
+    request.Clear();
+
+    request.AddCommand("set a 'foo \"bar'");
+    ASSERT_STREQ("*3\r\n$3\r\nset\r\n$1\r\na\r\n$8\r\nfoo \"bar\r\n",
+                 request._buf.to_string().c_str());
+    request.Clear();
+
+    request.AddCommand("set a 'foo \\\"bar'");
+    ASSERT_STREQ("*3\r\n$3\r\nset\r\n$1\r\na\r\n$9\r\nfoo \\\"bar\r\n",
+                 request._buf.to_string().c_str());
+    request.Clear();
+
+    request.AddCommand("set a \"foo 'bar\"");
+    ASSERT_STREQ("*3\r\n$3\r\nset\r\n$1\r\na\r\n$8\r\nfoo 'bar\r\n",
+                 request._buf.to_string().c_str());
+    request.Clear();
+
+    request.AddCommand("set a \"foo \\'bar\"");
+    ASSERT_STREQ("*3\r\n$3\r\nset\r\n$1\r\na\r\n$9\r\nfoo \\'bar\r\n",
+                 request._buf.to_string().c_str());
+    request.Clear();
+
+    request.AddCommand("set a \"foo \\\"bar\"");
+    ASSERT_STREQ("*3\r\n$3\r\nset\r\n$1\r\na\r\n$8\r\nfoo \"bar\r\n",
+                 request._buf.to_string().c_str());
+    request.Clear();
+}
+
 } //namespace
